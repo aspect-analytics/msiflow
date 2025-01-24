@@ -117,7 +117,7 @@ def get_summarized_spectra(result_dir, imzML_dir='', sum_file='', method='mean',
         plt.close()
 
         # sns.boxplot(data=df_sum_all.applymap(math.log10), flierprops=flierprops)
-        if method !='median':
+        if method !='median' and save_plots:
             ax = sns.boxplot(data=df_sum_all.applymap(math.log10), showfliers=False)
             ax.set_xticklabels(ax.get_xticklabels(), rotation=45)
             plt.xlabel("samples", size=12)
@@ -210,7 +210,7 @@ if __name__ == '__main__':
     parser.add_argument('-result_dir', type=str, default='', help='directory to store results')
     parser.add_argument('-plot', type=bool, default=False, help='set to True to plot summarized spectrum')
     parser.add_argument('-mz_rows', type=bool, default=True, help='set to True so that m/z values are rows')
-    parser.add_argument('-qc', type=bool, default=True, help='set to True for quality control output')
+    parser.add_argument('-qc', type=bool, default=False, help='set to True for quality control output')
     args = parser.parse_args()
 
     if args.result_dir == '':

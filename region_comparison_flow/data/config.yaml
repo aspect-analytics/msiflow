@@ -1,0 +1,11 @@
+data: "data"
+annotate: False
+
+summarize_spectra:
+  method: 'mean'
+
+statistical_analysis:
+  fc_thr: 0.5
+  sample_perc_thr: 0.5
+  save_ion_imgs: True
+

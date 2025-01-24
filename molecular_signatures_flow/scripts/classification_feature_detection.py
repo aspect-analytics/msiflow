@@ -234,6 +234,18 @@ if __name__ == '__main__':
             plt.savefig(os.path.join(args.result_dir, args.model + '_shap_summary_feat_imp.svg'))
             plt.close()
 
+            # create dataframe for shap summary
+            mean_shap_values = {}
+
+            for i, class_shap_values in enumerate(shap_values):
+                mean_shap_values[f"Class_{i}"] = np.mean(np.abs(class_shap_values), axis=0)
+
+            mean_shap_df = pd.DataFrame(mean_shap_values, index=X.columns)
+
+            filtered_mean_shap_df = mean_shap_df.loc[mean_shap_df.index.isin(features_list)]
+            filtered_mean_shap_df.columns = list(class_labels_dict.values())
+            filtered_mean_shap_df.to_csv(os.path.join(args.result_dir, args.model + '_shap_summary_feat_imp.csv'))
+
             # shap plot for each class
             for i, cl in enumerate(model.classes_):
                 # print(class_labels_dict[cl])

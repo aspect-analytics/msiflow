@@ -23,6 +23,23 @@ output:
 """
 
 
+def get_input(roi_img_dir, umap_neighb, clustering_method, n_clusters, min_samples, min_cluster_size, rois, fl_names):
+    if clustering_method == 'hdbscan':
+        input = expand(roi_img_dir + "/{roi}/umap_" + str(umap_neighb) + "neighb_" + clustering_method + "_"
+                       + str(min_samples) + "ms_" + str(min_cluster_size)
+                       + "mcs" + "/{fl}.png",roi=rois,fl=fl_names)
+    else:
+        input = expand(roi_img_dir + "/{roi}/umap_" + str(umap_neighb) + "neighb_" + clustering_method + "_"
+                       + str(n_clusters) + "clusters" + "/{fl}.png",roi=rois,fl=fl_names)
+    return input
+
+def get_output_umap_segment(clustering_method, n_clusters, roi_img_dir, n_neighbors, min_samples, min_cluster_size, file_names):
+    if clustering_method == 'hdbscan':
+        output = expand(roi_img_dir + "/{{ROIS}}/umap_" + str(n_neighbors) + "neighb_hdbscan_" + str(min_samples) + "ms_" + str(min_cluster_size) + "mcs" + "/{fl}.png",fl=file_names)
+    else:
+        output = expand(roi_img_dir + "/{{ROIS}}/umap_" + str(n_neighbors) + "neighb_" + clustering_method + "_" + str(n_clusters) + "clusters" + "/{fl}.png",fl=file_names)
+    return output
+
 configfile: 'data/config.yaml'
 
 
@@ -51,7 +68,8 @@ else:
 
 
 rule all:
-    input: expand(ROI_IMG_DIR + "/{roi}/umap_" + str(config['umap']['n_neighbors']) + "neighb_hdbscan_" + str(config['hdbscan']['min_samples']) + "ms_" + str(config['hdbscan']['min_cluster_size']) + "mcs" + "/{fl}.png", roi=ROIS, fl=FILE_NAMES)
+    #input: expand(ROI_IMG_DIR + "/{roi}/umap_" + str(config['umap']['n_neighbors']) + "neighb_hdbscan_" + str(config['hdbscan']['min_samples']) + "ms_" + str(config['hdbscan']['min_cluster_size']) + "mcs" + "/{fl}.png", roi=ROIS, fl=FILE_NAMES)
+    input: get_input(ROI_IMG_DIR, config['umap']['n_neighbors'], config['clustering']['method'], config['clustering']['n_clusters'], config['hdbscan']['min_samples'], config['hdbscan']['min_cluster_size'], ROIS, FILE_NAMES)
 
 rule reduce_spectra_to_roi_pixels:
     input: bin_img=ROI_IMG_DIR + "/{roi}_{fl}.tif",
@@ -62,17 +80,30 @@ rule reduce_spectra_to_roi_pixels:
 
 rule umap_segment:
     input: expand(ROI_IMG_DIR + "/{{ROIS}}/imzML/{fl}.imzML", fl=FILE_NAMES)
-    output: expand(ROI_IMG_DIR + "/{{ROIS}}/umap_" + str(config['umap']['n_neighbors']) + "neighb_hdbscan_" + str(config['hdbscan']['min_samples']) + "ms_" + str(config['hdbscan']['min_cluster_size']) + "mcs" + "/{fl}.png",fl=FILE_NAMES)
+    # output: expand(ROI_IMG_DIR + "/{{ROIS}}/umap_" + str(config['umap']['n_neighbors']) + "neighb_hdbscan_" + str(config['hdbscan']['min_samples']) + "ms_" + str(config['hdbscan']['min_cluster_size']) + "mcs" + "/{fl}.png",fl=FILE_NAMES)
+    output: get_output_umap_segment(config['clustering']['method'], config['clustering']['n_clusters'], ROI_IMG_DIR, config['umap']['n_neighbors'], config['hdbscan']['min_samples'], config['hdbscan']['min_cluster_size'], FILE_NAMES)
     # benchmark: repeat(BENCHMARK_PATH + "/{{ROIS}}.umap_segment.benchmark.txt", BM_REPEAT)
     run:
         if UMAP_MODEL != '':
-            shell("python " + MSI_SEG_SCRIPT_PATH + "/multi_sample_segmentation.py " + ROI_IMG_DIR + "/{wildcards.ROIS}/imzML "
-                                                                                                     "-result_dir " + ROI_IMG_DIR + "/{wildcards.ROIS}/umap_{config[umap][n_neighbors]}neighb_hdbscan_{config[hdbscan][min_samples]}ms_{config[hdbscan][min_cluster_size]}mcs "
-                                                                                                                                    "-method \'umap\' -dist_metric {config[umap][metric]} -min_dist {config[umap][min_dist]} "
-                                                                                                                                    "-clustering_method \'hdbscan\' -dot_size {config[dot_size]} "
-                                                                                                                                    "-embedding_model " + UMAP_MODEL)
+            if config['clustering']['method'] == 'hdbscan':
+                shell("python " + MSI_SEG_SCRIPT_PATH + "/multi_sample_segmentation.py " + ROI_IMG_DIR + "/{wildcards.ROIS}/imzML "
+                                                                                                         "-result_dir " + ROI_IMG_DIR + "/{wildcards.ROIS}/umap_{config[umap][n_neighbors]}neighb_hdbscan_{config[hdbscan][min_samples]}ms_{config[hdbscan][min_cluster_size]}mcs "
+                                                                                                                                        "-method \'umap\' -dist_metric {config[umap][metric]} -min_dist {config[umap][min_dist]} "
+                                                                                                                                        "-clustering_method {config[clustering][method]} -n_clusters {config[clustering][n_clusters]} -dot_size {config[dot_size]} "
+                                                                                                                                        "-embedding_model " + UMAP_MODEL + " -batch_correct {config[batch_correct]}")
+            else:
+                shell("python " + MSI_SEG_SCRIPT_PATH + "/multi_sample_segmentation.py " + ROI_IMG_DIR + "/{wildcards.ROIS}/imzML "
+                                                                                                         "-result_dir " + ROI_IMG_DIR + "/{wildcards.ROIS}/umap_{config[umap][n_neighbors]}neighb_{config[clustering][method]}_{config[clustering][n_clusters]}clusters "
+                                                                                                                                        "-method \'umap\' -dist_metric {config[umap][metric]} -min_dist {config[umap][min_dist]} "
+                                                                                                                                        "-clustering_method {config[clustering][method]} -n_clusters {config[clustering][n_clusters]} -dot_size {config[dot_size]} -embedding_model " + UMAP_MODEL + " -batch_correct {config[batch_correct]}")
         else:
-            shell("python " + MSI_SEG_SCRIPT_PATH + "/multi_sample_segmentation.py " + ROI_IMG_DIR + "/{wildcards.ROIS}/imzML "
-                                                                                                     "-result_dir " + ROI_IMG_DIR + "/{wildcards.ROIS}/umap_{config[umap][n_neighbors]}neighb_hdbscan_{config[hdbscan][min_samples]}ms_{config[hdbscan][min_cluster_size]}mcs "
-                                                                                                                                    "-method \'umap\' -dist_metric {config[umap][metric]} -min_dist {config[umap][min_dist]} "
-                                                                                                                                    "-clustering_method \'hdbscan\' -dot_size {config[dot_size]}")
+            if config['clustering']['method'] == 'hdbscan':
+                shell("python " + MSI_SEG_SCRIPT_PATH + "/multi_sample_segmentation.py " + ROI_IMG_DIR + "/{wildcards.ROIS}/imzML "
+                                                                                                         "-result_dir " + ROI_IMG_DIR + "/{wildcards.ROIS}/umap_{config[umap][n_neighbors]}neighb_hdbscan_{config[hdbscan][min_samples]}ms_{config[hdbscan][min_cluster_size]}mcs "
+                                                                                                                                        "-method \'umap\' -dist_metric {config[umap][metric]} -min_dist {config[umap][min_dist]} "
+                                                                                                                                        "-clustering_method {config[clustering][method]} -n_clusters {config[clustering][n_clusters]} -dot_size {config[dot_size]} -batch_correct {config[batch_correct]}")
+            else:
+                shell("python " + MSI_SEG_SCRIPT_PATH + "/multi_sample_segmentation.py " + ROI_IMG_DIR + "/{wildcards.ROIS}/imzML "
+                                                                                                         "-result_dir " + ROI_IMG_DIR + "/{wildcards.ROIS}/umap_{config[umap][n_neighbors]}neighb_{config[clustering][method]}_{config[clustering][n_clusters]}clusters "
+                                                                                                                                        "-method \'umap\' -dist_metric {config[umap][metric]} -min_dist {config[umap][min_dist]} "
+                                                                                                                                        "-clustering_method {config[clustering][method]} -n_clusters {config[clustering][n_clusters]} -dot_size {config[dot_size]} -batch_correct {config[batch_correct]}")

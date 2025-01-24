@@ -1,0 +1,81 @@
+import os
+from os.path import join
+import sys
+
+sys.path.append(".")
+from pkg.io import files_match_pattern, decode_files
+
+
+def get_input_all(bin_img_dir, groups, samples, input_list=[]):
+    #input_list.append(expand(bin_img_dir + '/imzML/{cl}_{grp}_{smpl}.imzML', cl=classes, grp=groups, smpl=samples))
+    #input_list.append(BIN_IMG_DIR + '/imzML/summarized_' + str(config['summarize_spectra']['method']) + '/summarized.csv')
+    input_list.append(bin_img_dir + '/imzML/summarized_' + str(config['summarize_spectra']['method']) + '/analysis/FC.csv')
+    input_list.append(bin_img_dir+ '/imzML/summarized_' + str(config['summarize_spectra']['method']) +
+                        '/analysis/' + str(config['statistical_analysis']['fc_thr']) + '_fc_'
+                        + str(config['statistical_analysis']['sample_perc_thr']) + '_samples_filtered.csv')
+    if config['statistical_analysis']['save_ion_imgs']:
+        input_list.append(expand(bin_img_dir + '/imzML/summarized_' + str(config['summarize_spectra']['method']) + '/analysis/' + str(config['statistical_analysis']['fc_thr']) + '_fc_' + str(config['statistical_analysis']['sample_perc_thr']) + '_samples_ion_imgs/{grp}_{smpl}', grp=groups, smpl=samples))
+    print(input_list)
+    return input_list
+
+
+configfile: 'data/config.yaml'
+
+
+imzML_pattern = r"^[a-zA-z0-9]+_[a-zA-z0-9]+\.imzML$" # imzML files must be named: condition_sampleno.imzML
+bin_img_pattern = r"^[a-zA-z0-9]+_[a-zA-z0-9]+_[a-zA-z0-9]+\.tif$"  # binary image files must be named: region_condition_sampleno.tif
+
+SCRIPT_PATH = 'region_comparison_flow/scripts'
+REGION_GROUP_SCRIPT_PATH = 'region_group_analysis_flow/scripts'
+VIS_SCRIPT_PATH = 'data_visualization'
+DATA_PATH = config['data']
+# BENCHMARK_PATH = join(DATA_PATH, 'benchmark')
+# BM_REPEAT = 5
+
+IMZML_DIR = join(DATA_PATH, 'msi')
+ROOT_DIR = os.path.dirname(IMZML_DIR)
+BIN_IMG_DIR = join(DATA_PATH, 'bin_imgs')
+IMZML_FILES = files_match_pattern(IMZML_DIR, imzML_pattern)
+BIN_IMG_FILES = files_match_pattern(BIN_IMG_DIR, bin_img_pattern)
+FILE_NAMES = [f.split('.')[0] for f in IMZML_FILES]
+CLASSES, GROUPS, SAMPLES = decode_files(BIN_IMG_FILES)
+
+
+rule all:
+    input: get_input_all(BIN_IMG_DIR, GROUPS, SAMPLES)
+
+
+rule create_imzML_for_class_region:
+    input: imzML_file=IMZML_DIR + '/{grp}_{smpl}.imzML', bin_img=BIN_IMG_DIR + '/{cl}_{grp}_{smpl}.tif'
+    output: BIN_IMG_DIR + '/imzML/{cl}_{grp}_{smpl}.imzML'
+    # benchmark: repeat(BENCHMARK_PATH + "/{cl}_{fl}.create_imzML_for_class_region.benchmark.txt",BM_REPEAT)
+    shell: 'python ' + REGION_GROUP_SCRIPT_PATH + '/get_region_imzML_from_mask.py {input.imzML_file:q} {input.bin_img:q} '
+            '-result_file {output:q}'
+
+rule summarize_spectra:
+    input: expand(BIN_IMG_DIR + '/imzML/{cl}_{grp}_{smpl}.imzML', cl=CLASSES, grp=GROUPS, smpl=SAMPLES)
+    output: BIN_IMG_DIR + '/imzML/summarized_' + str(config['summarize_spectra']['method']) + '/summarized.csv'
+    # benchmark: repeat(BENCHMARK_PATH + "/{cl}.summarize_spectra.benchmark.txt",BM_REPEAT)
+    shell: 'python ' + REGION_GROUP_SCRIPT_PATH + '/get_summarized_spectra.py \'' + BIN_IMG_DIR + '/imzML\''
+            ' -method {config[summarize_spectra][method]} -result_dir \'' +
+            BIN_IMG_DIR + '/imzML/summarized_{config[summarize_spectra][method]}\''
+
+rule stat_analysis:
+    input: BIN_IMG_DIR + '/imzML/summarized_' + str(config['summarize_spectra']['method']) + '/summarized.csv'
+    output: all_fc=BIN_IMG_DIR + '/imzML/summarized_' + str(config['summarize_spectra']['method']) + '/analysis/FC.csv',
+            filtered_fc=BIN_IMG_DIR + '/imzML/summarized_' + str(config['summarize_spectra']['method']) +
+                        '/analysis/' + str(config['statistical_analysis']['fc_thr']) + '_fc_'
+                        + str(config['statistical_analysis']['sample_perc_thr']) + '_samples_filtered.csv',
+    shell: 'python ' + SCRIPT_PATH + '/intra_sample_statistics.py {input:q} ' + BIN_IMG_DIR
+            + '/imzML/summarized_{config[summarize_spectra][method]}/analysis -fc_thr {config[statistical_analysis][fc_thr]} '
+              '-sample_perc_thr {config[statistical_analysis][sample_perc_thr]}'
+
+rule save_ion_imgs:
+    input: regulated=BIN_IMG_DIR + '/imzML/summarized_' + str(config['summarize_spectra']['method']) + '/analysis/' + str(config['statistical_analysis']['fc_thr']) + '_fc_' + str(config['statistical_analysis']['sample_perc_thr']) + '_samples_filtered.csv',
+            imzML_file=IMZML_DIR + '/{grp}_{smpl}.imzML'
+    output: directory(BIN_IMG_DIR + '/imzML/summarized_' + str(config['summarize_spectra']['method']) + '/analysis/' + str(config['statistical_analysis']['fc_thr']) + '_fc_' + str(config['statistical_analysis']['sample_perc_thr']) + '_samples_ion_imgs/{grp}_{smpl}')
+    shell: 'python ' + VIS_SCRIPT_PATH + '/save_ion_imgs.py {input.imzML_file:q} ' + BIN_IMG_DIR + '/imzML/summarized_' + str(config['summarize_spectra']['method']) +
+                        '/analysis/' + str(config['statistical_analysis']['fc_thr']) + '_fc_'
+                        + str(config['statistical_analysis']['sample_perc_thr']) + '_samples_ion_imgs -mz_file {input.regulated:q} -format \'tif\''
+
+

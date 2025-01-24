@@ -14,7 +14,7 @@ from pkg import utils
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Filter out m/z values based on spatial coherence')
     parser.add_argument('imzML', type=str, help='imzML_file')
-    # parser.add_argument('sc_file', type=str, help='file with spatial coherence')
+    # parser.add_argument('sc_file', type=str, default=None, help='file with spatial coherence')
     parser.add_argument('sc_thr', type=int, help='threshold to filter')
     parser.add_argument('ref_mz', type=str, help='file with numpy mz')
     parser.add_argument('-result_dir', type=str, default='', help='directory to save sc filtered file')

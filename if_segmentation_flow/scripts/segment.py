@@ -12,7 +12,7 @@ from pkg import utils
 
 
 
-def segment(img, sigma, thr_method, min_size):
+def segment(img, sigma, thr_method, min_size, bin_closing_size):
     # normalize data
     img = utils.NormalizeData(img)
 
@@ -29,6 +29,10 @@ def segment(img, sigma, thr_method, min_size):
     # remove small objects
     img = remove_small_objects(img, min_size)
 
+    # binary closing
+    if bin_closing_size > 0:
+        img = binary_closing(img, footprint=np.ones((bin_closing_size, bin_closing_size)))
+
     img = (img * 255).astype('uint8')
 
     return img
@@ -42,6 +46,8 @@ if __name__ == '__main__':
     parser.add_argument('-thr_method', type=str, default='otsu', help='threshold algorithm',
                         choices=['otsu', 'yen', 'isodata', 'mean', 'minimum', 'triangle'])
     parser.add_argument('-min_size', type=int, default=10, help='all objects below this size will be removed')
+    parser.add_argument('-bin_closing_size', type=int, default=0, help='set size of structuring element, '
+                                                                       '0 for no binary closing')
     parser.add_argument('-chan_to_segment', type=int, default=10, help='all objects below this size will be removed')
     parser.add_argument('-chan_to_seg_list', type=lambda s: [int(item)-1 for item in s.split(',')], default=[],
                         help='pass delimited list of image channels to segment')
@@ -69,7 +75,7 @@ if __name__ == '__main__':
                 binary[i] = img[i]
     # segment single image
     else:
-        binary = segment(img, args.sigma, args.thr_method, args.min_size)
+        binary = segment(img, args.sigma, args.thr_method, args.min_size, args.bin_closing_size)
 
     # write segmented output
     tifffile.imwrite(args.output, binary.astype('uint8'), photometric='minisblack')

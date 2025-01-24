@@ -7,12 +7,22 @@ import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
 
-# set number of threads to 1 to generate reproducible registration results
-os.environ['ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS'] = '1'
-
 # get_ipython().run_line_magic('matplotlib', 'inline')
 plt.rcParams["figure.figsize"] = (10, 8)
 Image.MAX_IMAGE_PIXELS = None  # To avoid decompression bomb images warning from Pillow
+
+
+def get_overlay_img(image1, image2):
+    image1 = (image1 - image1.min()) / (image1.max() - image1.min())
+    image2 = (image2 - image2.min()) / (image2.max() - image2.min())
+
+    height, width = image1.shape
+    overlay_image = np.zeros((height, width, 3))
+    overlay_image[..., 0] = image1  # Red channel
+    overlay_image[..., 1] = image2  # Green channel
+    overlay_image = (overlay_image * 255).astype(np.uint8)
+
+    return overlay_image
 
 
 def preview(img1, img2=None, title1='', title2='', figsize=(10, 8)):
@@ -67,7 +77,7 @@ def registration(fixed_img, moving_img, af_chan, out_dir, plot=False):
     # moving images
     RegImage = ants.registration(ants.from_numpy(fixed_img),
                                  ants.from_numpy(moving_img),
-                                 "SyNRA", syn_metric='mattes', random_seed=42)
+                                 "SyNRA", syn_metric='mattes',)
     # Reg_Image is a dictionary containing the transformed image from moving to
     # fixed space (warpedmovout, and warpedfixout respectively) and vise versa, and the
     # coressponding transformations (fwdtransforms, and invtransforms respectively)
@@ -86,7 +96,17 @@ def registration(fixed_img, moving_img, af_chan, out_dir, plot=False):
     RegMovToFix = RegImage['warpedmovout'].numpy()
     #tifffile.imwrite(os.path.join(out_dir, 'reg_' + moving_fn), RegMovToFix.astype('uint8'), photometric='minisblack')
 
-    # overlay = np.stack((fixed_img, RegMovToFix), axis=-1)
+    # save overlay of fixed image (red image channel) and (registered) moving image (green image channel)
+    overlay_before_reg = get_overlay_img(fixed_img, moving_img)
+    overlay_after_reg = get_overlay_img(fixed_img, RegMovToFix)
+
+    pil_overlay_before_reg = Image.fromarray(overlay_before_reg)
+    pil_overlay_after_reg = Image.fromarray(overlay_after_reg)
+
+    pil_overlay_before_reg.save(os.path.join(out_dir, moving_fn.split('.')[0] + '_before_registration_overlay.tif'),
+                                format='TIFF')
+    pil_overlay_after_reg.save(os.path.join(out_dir, moving_fn.split('.')[0] + '_after_registration_overlay.tif'),
+                               format='TIFF')
 
     if plot:
         preview(fixed_img, RegMovToFix, title1='Fixed image', title2='Registered moving image')

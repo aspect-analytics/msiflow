@@ -22,7 +22,7 @@ The following provides instructions on how to run the workflow via the **command
 
 To run this workflow via **Docker** follow these instructions:
   - start Docker
-  - in a terminal run `docker run -v <path-to-data-and-config>:/home/user/msiflow/data -e 'WORKFLOW=msi_preprocessing_flow' -e 'CORES=<number-of-cores>' phispa1812/msiflow`
+  - in a terminal run `docker run -v <path-to-data-and-config>:/home/user/msiflow/data -e 'WORKFLOW=msi_preprocessing_flow' -e 'CORES=<number-of-cores>' phispa1812/msiflow_cli`
 
 To run this workflow **locally** follow these instructions:
 - in a terminal navigate to the root directory of msiFlow

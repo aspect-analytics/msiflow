@@ -1,10 +1,15 @@
 data: 'data'
 dot_size: 5
+batch_correct: 1
 umap:
   metric: 'cosine'
   n_neighbors: 3
   min_dist: 0.0
   use_model: False
+
+clustering:
+  method: 'k-means'
+  n_clusters: 5
 
 hdbscan:
   min_samples: 30

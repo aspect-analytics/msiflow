@@ -177,7 +177,7 @@ def segmentation(df, general_dict, cluster_dict):
                                               min_cluster_size=cluster_dict['min_cluster_size'], debug=general_dict['debug'])
             #print(np.unique(class_labels))
         elif cluster_dict['cluster'] == 'hierarchical':
-            class_labels = hierarchical_clustering(data=sp_data, k=cluster_dict['n_clusters'], output_file=os.path.join(general_dict['result_dir'], filename + '_hdbscan.png'))
+            class_labels = hierarchical_clustering(data=sp_data, k=cluster_dict['n_clusters'])
         elif cluster_dict['cluster'] == 'gaussian_mixture':
             class_labels = gaussian_mixture(data=sp_data, k=cluster_dict['n_clusters'])
         #elif cluster_dict['cluster'] == 'som':
@@ -241,6 +241,7 @@ def segmentation(df, general_dict, cluster_dict):
             # keep clusters which have more than 0 border points
             df_pixel_calc = df_pixel_calc[df_pixel_calc['border pixels (%)'] > 0] 
             # print(df_pixel_calc)
+            df_pixel_calc.to_csv(os.path.join(general_dict['result_dir'], filename + '_border_pixels.csv'))
             print('saving visualizations...')
             # print('cluster {} has {} contour pixels'.format(matrix_class, contour_count))
 
@@ -347,7 +348,8 @@ if __name__ == '__main__':
     parser.add_argument('-cmap', type=str, default='Spectral', help='cmap to use for all plots, default=\'Spectral\'')
     parser.add_argument('-dot_size', type=int, default=1, help='size for dots in scatterplots, default=1')
     parser.add_argument('-debug', type=bool, default=False, help='set to true if output should be plotted, default=False')
-    parser.add_argument('-random_state', type=int, default=None, help='set a value for reproducibility, default=None')
+    parser.add_argument('-random_state', type=int, default=42,
+                        help='set a value for reproducibility, default=42')
     args = parser.parse_args()
 
     if args.supervised_dir != '':

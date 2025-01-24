@@ -32,4 +32,5 @@ rule segment:
     shell: 'python ' + IF_SEG_SCRIPT_PATH + '/segment.py {input:q} -output {output:q} '
             '-sigma {config[if_segmentation][gauss_sigma]} '
             '-thr_method {config[if_segmentation][threshold_algorithm]} -min_size {config[if_segmentation][min_size]} '
+            '-bin_closing_size {config[if_segmentation][bin_closing_size]} '
             '-chan_to_seg_list {config[if_segmentation][img_channels_to_segment]}'

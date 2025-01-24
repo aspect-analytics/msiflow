@@ -17,10 +17,12 @@ import tifffile
 from sklearn.decomposition import PCA, TruncatedSVD
 import pickle
 from datetime import datetime
+from combat.pycombat import pycombat
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 from pkg import utils
-from pkg.clustering import kmeans_clustering, HDBSCAN_clustering, hierarchical_clustering, gaussian_mixture
+from pkg.clustering import (kmeans_clustering, HDBSCAN_clustering, hierarchical_clustering, gaussian_mixture,
+                            kmedoids_clustering, spectral_clustering, som)
 
 warnings.filterwarnings('ignore', module='pyimzml')
 
@@ -115,7 +117,7 @@ def extract_binary_imgs(file_dir, file_list, df_data, result_dir):
 
 def umap_groups(imzml_dir, result_dir, clustering='HDBSCAN', min_clusters=50, min_samples=5, method='umap',
                 dist_metric='cosine', n_neighbors=50, min_dist=0.1, n_clusters=10, preembedding=False,
-                preembedding_model='', embedding_model='', dot_size=2, cmap='Spectral'):
+                preembedding_model='', embedding_model='', dot_size=2, cmap='Spectral', batch_correct=0):
     """
     Computes dimensionality reduction (UMAP or t-sne) on multiple imzML files (which must have a common m/z vector)
     of different groups. UMAP/t-sne and clustering result is saved as csv file. Also scatter plots of UMAP/t-sne,
@@ -144,6 +146,18 @@ def umap_groups(imzml_dir, result_dir, clustering='HDBSCAN', min_clusters=50, mi
     df_combined = utils.get_combined_dataframe_from_files(imzml_dir, file_list, groups=True)
     df_meta_data = df_combined.iloc[:, :4]
     spec_data = df_combined.iloc[:,4:].to_numpy()
+
+    if batch_correct != 0:
+        sample_list = df_combined['sample'].to_list()
+        df_combined_temp = df_combined.drop(columns=['group', 'x', 'y'])
+        df_combined_transp = df_combined_temp.set_index('sample').transpose()
+
+        data_corrected = pycombat(df_combined_transp, sample_list)
+        print(data_corrected)
+        data_corrected = data_corrected.transpose()
+        print(data_corrected)
+        spec_data = data_corrected.to_numpy()
+
     # print(df_combined)
     if preembedding and spec_data.shape[1] > 1000:
         print("TSVD embedding started at {}".format(datetime.now()))
@@ -181,6 +195,12 @@ def umap_groups(imzml_dir, result_dir, clustering='HDBSCAN', min_clusters=50, mi
         labels = gaussian_mixture(data=embedding, k=n_clusters)
     elif clustering == 'k-means':
         labels = kmeans_clustering(data=embedding, k=n_clusters)
+    elif clustering == 'k-medoids':
+        labels = kmedoids_clustering(data=embedding, k=n_clusters)
+    elif clustering == 'spectral':
+        labels = spectral_clustering(data=embedding, k=n_clusters)
+    elif clustering == 'som':
+        labels = som(data=embedding, k=n_clusters)
 
     print('{} finished at {}'.format(clustering, datetime.now()))
     # extract RGBA color for labels
@@ -338,7 +358,7 @@ def umap_groups(imzml_dir, result_dir, clustering='HDBSCAN', min_clusters=50, mi
     plt.xlim([0, 1])
     plt.ylim([0, 1])
     plt.axis('off')
-    plt.savefig(os.path.join(result_dir, 'clusters.png'), dpi=300)
+    plt.savefig(os.path.join(result_dir, 'clusters.png'), dpi=300, transparent=True)
     plt.savefig(os.path.join(result_dir, 'clusters.svg'))
     plt.close()
 
@@ -375,6 +395,7 @@ if __name__ == '__main__':
     parser.add_argument('-embedding_model', type=str, default='', help='model of embedding')
     parser.add_argument('-dot_size', type=float, default=0.5, help='sot size for scatter plots')
     parser.add_argument('-cmap', type=str, default='Spectral', help='cmap')
+    parser.add_argument('-batch_correct', type=int, default=0, help='set to True to perform pyCOmbat batch correction')
     args = parser.parse_args()
 
     if args.result_dir == '':
@@ -392,4 +413,4 @@ if __name__ == '__main__':
                 n_neighbors=args.n_neighbors, min_dist=args.min_dist,
                 clustering=args.clustering_method, min_clusters=args.min_cluster_size, min_samples=args.min_samples,
                 n_clusters=args.n_clusters, preembedding=args.preembedding, preembedding_model=args.preembedding_model,
-                embedding_model=args.embedding_model, dot_size=args.dot_size, cmap=args.cmap)
+                embedding_model=args.embedding_model, dot_size=args.dot_size, cmap=args.cmap, batch_correct=args.batch_correct)

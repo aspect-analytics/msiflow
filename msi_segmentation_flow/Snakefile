@@ -76,4 +76,4 @@ rule multi_sample_segmentation:
                         '-n_neighbors {config[umap][n_neighbors]} -min_dist {config[umap][min_dist]} '
                         '-clustering_method {config[clustering][method]} -min_cluster_size {config[hdbscan][min_cluster_size]} '
                         '-min_samples {config[hdbscan][min_samples]} -n_clusters {config[clustering][n_clusters]} '
-                        '-dot_size {config[general][dot_size]}'
+                        '-dot_size {config[general][dot_size]} -batch_correct {config[general][batch_correct]}'

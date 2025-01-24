@@ -18,7 +18,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Create new imzML with pixels from a binary mask')
     parser.add_argument('imzML_file', type=str, help='imzML file')
     parser.add_argument('bin_img', type=str, help='binary image of region as tiff file')
-    parser.add_argument('-result_dir', type=str, help='directory to save result')
+    parser.add_argument('-result_dir', type=str, default='', help='directory to save result')
+    parser.add_argument('-result_file', type=str, default='', help='directory to save result')
     parser.add_argument('-remove_small_objects', type=bool, default=False,
                         help='set to True to remove small objects from binary image')
     parser.add_argument('-plot', type=bool, default=False, help='directory to save result')
@@ -26,10 +27,14 @@ if __name__ == '__main__':
 
     file_name = os.path.basename(args.imzML_file)
 
-    if args.result_dir == '':
+    if args.result_dir == '' and args.result_file == '':
         args.result_dir = os.path.join(os.path.dirname(args.imzML_file), "region")
-        if not os.path.exists(args.result_dir):
-            os.mkdir(args.result_dir)
+    if args.result_file != '':
+        result_dir = os.path.dirname(args.result_file)
+    else:
+        result_dir = args.result_dir
+    if not os.path.exists(result_dir):
+        os.mkdir(result_dir)
 
     file_name = os.path.basename(args.imzML_file).split('.')[0]
 
@@ -57,7 +62,11 @@ if __name__ == '__main__':
     spec_df = bin_df.iloc[:, 2:]
 
     # write imzML file with pixels in binary image
-    with ImzMLWriter(os.path.join(args.result_dir, file_name)) as writer:
+    if args.result_dir != '':
+        out_file = os.path.join(args.result_dir, file_name)
+    else:
+        out_file = args.result_file
+    with ImzMLWriter(out_file) as writer:
         for i in tqdm(range(bin_df.shape[0])):
             writer.addSpectrum(mzs, spec_df.iloc[i, :].to_numpy(), (bin_df.iloc[i, 0], bin_df.iloc[i, 1], 0))
 
