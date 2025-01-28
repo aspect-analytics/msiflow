@@ -4,10 +4,25 @@ import argparse
 import numpy as np
 import os
 
+
 def norm(img):
     img = img - img.min()
     img = img / img.max()
     return img
+
+
+def plot_images(img1, img2, res_img, logical_operator):
+    f, axarr = plt.subplots(ncols=3, sharex=True, sharey=True)
+    axarr[0].imshow(img1, cmap='gray')
+    axarr[0].set_title('img1')
+    axarr[1].imshow(img2, cmap='gray')
+    axarr[1].set_title('img2')
+    axarr[2].imshow(res_img, cmap='gray')
+    axarr[2].set_title('img1 {} img2'.format(logical_operator))
+    axarr[0].axis('off')
+    axarr[1].axis('off')
+    axarr[2].axis('off')
+    plt.show()
 
 
 if __name__ == '__main__':
@@ -49,35 +64,29 @@ if __name__ == '__main__':
                 if i in args.chan_list:
                     res_img[i] = ((img1[i] > 0) & (img2 > 0))*255
                     if args.plot:
-                        f, axarr = plt.subplots(ncols=3, sharex=True, sharey=True)
-                        axarr[0].imshow(img1[i], cmap='gray')
-                        axarr[0].set_title('img1')
-                        axarr[1].imshow(img2, cmap='gray')
-                        axarr[1].set_title('img2')
-                        axarr[2].imshow(res_img[i], cmap='gray')
-                        axarr[2].set_title('img1 {} img2'.format(args.logical_operator))
-                        axarr[0].axis('off')
-                        axarr[1].axis('off')
-                        axarr[2].axis('off')
-                        plt.show()
+                        plot_images(img1[i], img2[i], res_img[i], args.logical_operator)
                 else:
                     res_img[i] = img1[i]
         # process single image
         else:
             res_img = ((img1 > 0) & (img2 > 0))*255
             if args.plot:
-                f, axarr = plt.subplots(ncols=3, sharex=True, sharey=True)
-                axarr[0].imshow(img1, cmap='gray')
-                axarr[0].set_title('img1')
-                axarr[1].imshow(img2, cmap='gray')
-                axarr[1].set_title('img2')
-                axarr[2].imshow(res_img, cmap='gray')
-                axarr[2].set_title('img1 {} img2'.format(args.logical_operator))
-                axarr[0].axis('off')
-                axarr[1].axis('off')
-                axarr[2].axis('off')
-                plt.show()
-
+                plot_images(img1, img2, res_img, args.logical_operator)
+    elif args.logical_operator == 'or':
+        # process stack
+        if img1.squeeze().ndim > 2:
+            for i in range(img1.shape[0]):
+                if i in args.chan_list:
+                    res_img[i] = ((img1[i] > 0) | (img2 > 0)) * 255
+                    if args.plot:
+                        plot_images(img1[i], img2[i], res_img[i], args.logical_operator)
+                else:
+                    res_img[i] = img1[i]
+        # process single image
+        else:
+            res_img = ((img1 > 0) | (img2 > 0)) * 255
+            if args.plot:
+                plot_images(img1, img2, res_img, args.logical_operator)
     else:
         res_img = img1
 

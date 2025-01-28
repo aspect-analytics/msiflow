@@ -6,13 +6,13 @@
 automated workflows for reproducible and scalable multimodal mass spectrometry imaging and microscopy data analysis
 </h2>
 
+[![Paper](https://img.shields.io/badge/paper-10.1038%2Fs41467--024--55306--7-%233D2F76)](https://doi.org/10.1038/s41467-024-55306-7)
+&nbsp;
 [![License](https://img.shields.io/github/license/Immunodynamics-Engel-Lab/msiflow?color=green&style=flat)](https://github.com/Immunodynamics-Engel-Lab/msiflow/LICENSE)
 &nbsp;
 ![GitHub top language](https://img.shields.io/github/languages/top/Immunodynamics-Engel-Lab/msiflow)
 &nbsp;
 [![Latest Release](https://img.shields.io/github/v/release/Immunodynamics-Engel-Lab/msiflow?style=flat)](https://github.com/Immunodynamics-Engel-Lab/msiflow)
-&nbsp;
-[![Release Date](https://img.shields.io/github/release-date/Immunodynamics-Engel-Lab/msiflow?style=flat)](https://github.com/Immunodynamics-Engel-Lab/msiflow/releases)
 &nbsp;
 [![Issues](https://img.shields.io/github/issues/Immunodynamics-Engel-Lab/msiflow?style=flat)](https://github.com/Immunodynamics-Engel-Lab/msiflow/issues)
 &nbsp;
@@ -41,7 +41,7 @@ msiFlow can be run via **Docker** or **locally** by using a graphical user inter
 1. The **Docker version** of msiFlow is intended for **easy-to-use** execution and does not require package installations.
 2. The **local version** of msiFlow is intended for **development** and **advanced usage**.
 
-## Installation (< 5 min)
+## ⚙️ Installation (< 5 min)
 
 ### Docker Version
 
@@ -62,13 +62,13 @@ To use the local version of msiFlow, follow these instructions:
    1. if you have Anaconda installed, create an environment of msiFlow by running `conda env create --file msiflow_env.yaml`. This creates an environemnt with all required packages at once.
    2. if you want to use pure Python, download all packages by running `pip install -r requirements.txt`
 
-## System requirements
+## 🖥️ System requirements
 ### Hardware 
 The hardware requirements depend on the data size. The [example data](https://doi.org/10.5281/zenodo.11913042) for most workflows (except MSI pre-processing and segmentation) can be processed on a computer with 8 GB RAM. The example data for MSI pre-processing and segmentation requires at least 120 GB RAM.
 ### Software 
 All software dependencies and versions are listed in the [requirements.txt](https://github.com/Immunodynamics-Engel-Lab/msiflow/blob/main/requirements.txt) and can be installed via pip for local execution (see installation instructions above). The software has been tested on Ubuntu 20.04.6 LTS.
 
-## Run msiFlow
+## 🚀 Run msiFlow
 
 ### Docker Version
 
@@ -106,16 +106,22 @@ Each workflow directory contains a **README** with detailed information on
 - where and what **output** files are generated
 - where to find **example data** to run the workflow and reproduce the results
 
-## Example data
+## 📊 Example data
 Generally all example data to test the workflows can be found on Zenodo:
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.11913042.svg)](https://doi.org/10.5281/zenodo.11913042)
-## Correspondence
+
+## 📄 Paper
+Check out the paper: [msiFlow: automated workflows for reproducible and scalable multimodal mass spectrometry imaging and microscopy data analysis](https://doi.org/10.1038/s41467-024-55306-7) 
+
+Published in *Nature Communications*, 2025.
+
+## ✉️ Correspondence
 [**Prof. Dr. Daniel R. Engel**](mailto:danielrobert.engel@uk-essen.de): Department of Immunodynamics, Institute of Experimental Immunology and Imaging, University Hospital Essen, Essen, Germany
 
 http://www.immunodynamics.de
 
-## References
+## 🔗 References
 1. Veselkov, K., Sleeman, J., Claude, E. et al. BASIS: High-performance bioinformatics platform for processing of large-scale mass spectrometry imaging data in chemically augmented histology. Sci Rep 8, 4053 (2018). https://doi.org/10.1038/s41598-018-22499-z
 2. Grélard, F., Legland, D., Fanuel, M. et al. Esmraldi: efficient methods for the fusion of mass spectrometry and magnetic resonance images. BMC Bioinformatics 22, 56 (2021). https://doi.org/10.1186/s12859-020-03954-z
 3. imzy. imzy: A new reader/writer interface to imzML and other imaging mass spectrometry formats. GitHub repository (2022). https://github.com/vandeplaslab/imzy

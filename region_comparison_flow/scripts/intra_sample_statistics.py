@@ -17,6 +17,38 @@ def decode_names(names):
     return list(regions), list(samples)
 
 
+def plot_sample_percentage(percentage_per_row, fc_thr, sample_perc_thr, region_1, region_2, high=True, plot=False):
+    fc_sample_percentage_df = percentage_per_row.reset_index()
+    fc_sample_percentage_df.columns = ['m/z', 'sample percentage']
+    fc_sample_percentage_df = fc_sample_percentage_df.sort_values(by=['sample percentage'], ascending=False)
+    fc_sample_percentage_df['m/z'] = fc_sample_percentage_df['m/z'].round(2)
+    if len(fc_sample_percentage_df) > 20:
+        fc_sample_percentage_df = fc_sample_percentage_df.head(20)  # take the first 20 rows
+    print(fc_sample_percentage_df)
+
+    plt.figure(figsize=(7, 10))
+    sns.barplot(data=fc_sample_percentage_df, x='sample percentage', y='m/z', orient='h',
+                order=fc_sample_percentage_df['m/z'])
+    # sns.barplot(data=fc_sample_percentage_df, x='sample percentage', y='m/z', orient='h',
+    #             order=fc_sample_percentage_df['sample percentage'])
+    if high:
+        plt.title('sample percentage of m/z with log2(FC) > {0} ({1} vs {2})'.format(fc_thr, region_1, region_2))
+    else:
+        plt.title('sample percentage of m/z with log2(FC) < -{0} ({1} vs {2})'.format(fc_thr, region_1, region_2))
+    plt.xlabel('samples (%)')
+    plt.ylabel('m/z')
+    if high:
+        fl_name = '{}_fc_{}_sample_percentage'.format(fc_thr, sample_perc_thr)
+    else:
+        fl_name = '{}_fc_-{}_sample_percentage'.format(fc_thr, sample_perc_thr)
+    fc_sample_percentage_df.to_csv(os.path.join(args.output_dir, fl_name + '.csv'))
+    plt.savefig(os.path.join(args.output_dir, fl_name + '.svg'))
+
+    if plot:
+        plt.show()
+    plt.close()
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Calculates fold changes between two regions per individual MSI sample')
     parser.add_argument('input_file', type=str, help='input file with summarized intensities per region')
@@ -88,34 +120,28 @@ if __name__ == '__main__':
     fc_df = df[fc_cols]
     print(fc_df)
 
-    #above_threshold = (fc_df.abs() > args.fc_thr).mean(axis=1)
-    #filtered_df = fc_df[above_threshold >= args.sample_perc_thr]
-
     threshold = args.sample_perc_thr * fc_df.shape[1]  # sample percentage of the number of columns
     filtered_df = fc_df[(fc_df.gt(args.fc_thr).sum(axis=1) >= threshold) | (fc_df.lt(-args.fc_thr).sum(axis=1) >= threshold)]
 
-    # Count the number of columns per row with value > 1 or < -1
-    percentage_per_row = ((filtered_df > 1) | (filtered_df < -1)).sum(axis=1) / filtered_df.shape[1] * 100
-    fc_sample_percentage_df = percentage_per_row.reset_index()
-    fc_sample_percentage_df.columns = ['m/z', 'sample percentage']
-    fc_sample_percentage_df = fc_sample_percentage_df.sort_values(by=['sample percentage'], ascending=False)
-    fc_sample_percentage_df['m/z'] = fc_sample_percentage_df['m/z'].round(2)
-    if len(fc_sample_percentage_df) > 20:
-        fc_sample_percentage_df = fc_sample_percentage_df.head(20)  # take the first 20 rows
-    print(fc_sample_percentage_df)
+    filtered_high_df = fc_df[(fc_df.gt(args.fc_thr).sum(axis=1) >= threshold)]
+    filtered_low_df = fc_df[(fc_df.lt(-args.fc_thr).sum(axis=1) >= threshold)]
 
-    plt.figure(figsize=(7, 10))
-    sns.barplot(data=fc_sample_percentage_df, x='sample percentage', y='m/z', orient='h',
-                order=fc_sample_percentage_df['m/z'])
-    # sns.barplot(data=fc_sample_percentage_df, x='sample percentage', y='m/z', orient='h',
-    #             order=fc_sample_percentage_df['sample percentage'])
-    plt.title('sample percentage of m/z with |log2(FC)| > {0}'.format(args.fc_thr))
-    plt.xlabel('samples (%)')
-    plt.ylabel('m/z')
-    if args.plot:
-        plt.show()
-    fc_sample_percentage_df.to_csv(os.path.join(args.output_dir, '{}_fc_{}_sample_percentage.csv'.format(args.fc_thr, args.sample_perc_thr)))
-    plt.savefig(os.path.join(args.output_dir, '{}_fc_{}_sample_percentage.svg'.format(args.fc_thr, args.sample_perc_thr)))
+    print("threshold=", threshold)
+    print("filtered_df=", filtered_df)
+
+    # Count the number of columns per row with value > 1 or < -1
+    count_per_row_high = (filtered_high_df > args.fc_thr).sum(axis=1)
+    count_per_row_low = (filtered_low_df < -args.fc_thr).sum(axis=1)
+
+    print(count_per_row_high)
+    print(count_per_row_low)
+
+    percentage_per_row_high = (filtered_high_df > args.fc_thr).sum(axis=1) / filtered_df.shape[1] * 100
+    percentage_per_row_low = (filtered_low_df < -args.fc_thr).sum(axis=1) / filtered_df.shape[1] * 100
+
+    # plot
+    plot_sample_percentage(percentage_per_row_high, args.fc_thr, args.sample_perc_thr, regions[0], regions[1], True, args.plot)
+    plot_sample_percentage(percentage_per_row_low, args.fc_thr, args.sample_perc_thr, regions[0], regions[1], False, args.plot)
 
     # Display the filtered DataFrame
     print(filtered_df)
