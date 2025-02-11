@@ -40,7 +40,7 @@ def plot_sample_percentage(percentage_per_row, fc_thr, sample_perc_thr, region_1
     if high:
         fl_name = '{}_fc_{}_sample_percentage'.format(fc_thr, sample_perc_thr)
     else:
-        fl_name = '{}_fc_-{}_sample_percentage'.format(fc_thr, sample_perc_thr)
+        fl_name = '-{}_fc_{}_sample_percentage'.format(fc_thr, sample_perc_thr)
     fc_sample_percentage_df.to_csv(os.path.join(args.output_dir, fl_name + '.csv'))
     plt.savefig(os.path.join(args.output_dir, fl_name + '.svg'))
 
@@ -143,11 +143,9 @@ if __name__ == '__main__':
     plot_sample_percentage(percentage_per_row_high, args.fc_thr, args.sample_perc_thr, regions[0], regions[1], True, args.plot)
     plot_sample_percentage(percentage_per_row_low, args.fc_thr, args.sample_perc_thr, regions[0], regions[1], False, args.plot)
 
-    # Display the filtered DataFrame
-    print(filtered_df)
-
-    filtered_df.to_csv(os.path.join(args.output_dir,
-                                    '{}_fc_{}_samples_filtered.csv'.format(args.fc_thr, args.sample_perc_thr)))
+    # save filtered df
+    filtered_high_df.to_csv(os.path.join(args.output_dir, '{}_fc_{}_samples_filtered.csv'.format(args.fc_thr, args.sample_perc_thr)))
+    filtered_low_df.to_csv(os.path.join(args.output_dir, '-{}_fc_{}_samples_filtered.csv'.format(args.fc_thr, args.sample_perc_thr)))
 
 
 

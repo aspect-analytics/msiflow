@@ -14,11 +14,14 @@ from tqdm import trange
 import numba
 import seaborn as sns
 from tqdm import tqdm
+import pandas as pd
 
 from pkg import utils
 
 
 warnings.filterwarnings("ignore", category=UserWarning)
+
+pd.options.mode.chained_assignment = None
 
 
 def plot_mz_umap(df, mz, out_file, df_control=None, show_neg_group_only=False, cmap='inferno', dot_size=1, plot=False):

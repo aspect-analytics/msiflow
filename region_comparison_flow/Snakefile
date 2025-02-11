@@ -13,9 +13,12 @@ def get_input_all(bin_img_dir, groups, samples, input_list=[]):
     input_list.append(bin_img_dir+ '/imzML/summarized_' + str(config['summarize_spectra']['method']) +
                         '/analysis/' + str(config['statistical_analysis']['fc_thr']) + '_fc_'
                         + str(config['statistical_analysis']['sample_perc_thr']) + '_samples_filtered.csv')
-    if config['statistical_analysis']['save_ion_imgs']:
+    input_list.append(bin_img_dir + '/imzML/summarized_' + str(config['summarize_spectra']['method']) +
+                      '/analysis/-' + str(config['statistical_analysis']['fc_thr']) + '_fc_'
+                      + str(config['statistical_analysis']['sample_perc_thr']) + '_samples_filtered.csv')
+    if config['ion_imgs']['save']:
         input_list.append(expand(bin_img_dir + '/imzML/summarized_' + str(config['summarize_spectra']['method']) + '/analysis/' + str(config['statistical_analysis']['fc_thr']) + '_fc_' + str(config['statistical_analysis']['sample_perc_thr']) + '_samples_ion_imgs/{grp}_{smpl}', grp=groups, smpl=samples))
-    print(input_list)
+        input_list.append(expand(bin_img_dir + '/imzML/summarized_' + str(config['summarize_spectra']['method']) + '/analysis/-' + str(config['statistical_analysis']['fc_thr']) + '_fc_' + str(config['statistical_analysis']['sample_perc_thr']) + '_samples_ion_imgs/{grp}_{smpl}',grp=groups,smpl=samples))
     return input_list
 
 
@@ -63,19 +66,33 @@ rule summarize_spectra:
 rule stat_analysis:
     input: BIN_IMG_DIR + '/imzML/summarized_' + str(config['summarize_spectra']['method']) + '/summarized.csv'
     output: all_fc=BIN_IMG_DIR + '/imzML/summarized_' + str(config['summarize_spectra']['method']) + '/analysis/FC.csv',
-            filtered_fc=BIN_IMG_DIR + '/imzML/summarized_' + str(config['summarize_spectra']['method']) +
+            filtered_fc_up=BIN_IMG_DIR + '/imzML/summarized_' + str(config['summarize_spectra']['method']) +
                         '/analysis/' + str(config['statistical_analysis']['fc_thr']) + '_fc_'
+                        + str(config['statistical_analysis']['sample_perc_thr']) + '_samples_filtered.csv',
+            filtered_fc_down=BIN_IMG_DIR + '/imzML/summarized_' + str(config['summarize_spectra']['method']) +
+                        '/analysis/-' + str(config['statistical_analysis']['fc_thr']) + '_fc_'
                         + str(config['statistical_analysis']['sample_perc_thr']) + '_samples_filtered.csv',
     shell: 'python ' + SCRIPT_PATH + '/intra_sample_statistics.py {input:q} ' + BIN_IMG_DIR
             + '/imzML/summarized_{config[summarize_spectra][method]}/analysis -fc_thr {config[statistical_analysis][fc_thr]} '
               '-sample_perc_thr {config[statistical_analysis][sample_perc_thr]}'
 
-rule save_ion_imgs:
-    input: regulated=BIN_IMG_DIR + '/imzML/summarized_' + str(config['summarize_spectra']['method']) + '/analysis/' + str(config['statistical_analysis']['fc_thr']) + '_fc_' + str(config['statistical_analysis']['sample_perc_thr']) + '_samples_filtered.csv',
+rule save_ion_imgs_upreg:
+    input: regulated_up=BIN_IMG_DIR + '/imzML/summarized_' + str(config['summarize_spectra']['method']) + '/analysis/' + str(config['statistical_analysis']['fc_thr']) + '_fc_' + str(config['statistical_analysis']['sample_perc_thr']) + '_samples_filtered.csv',
             imzML_file=IMZML_DIR + '/{grp}_{smpl}.imzML'
     output: directory(BIN_IMG_DIR + '/imzML/summarized_' + str(config['summarize_spectra']['method']) + '/analysis/' + str(config['statistical_analysis']['fc_thr']) + '_fc_' + str(config['statistical_analysis']['sample_perc_thr']) + '_samples_ion_imgs/{grp}_{smpl}')
-    shell: 'python ' + VIS_SCRIPT_PATH + '/save_ion_imgs.py {input.imzML_file:q} ' + BIN_IMG_DIR + '/imzML/summarized_' + str(config['summarize_spectra']['method']) +
-                        '/analysis/' + str(config['statistical_analysis']['fc_thr']) + '_fc_'
-                        + str(config['statistical_analysis']['sample_perc_thr']) + '_samples_ion_imgs -mz_file {input.regulated:q} -format \'tif\''
+    run:
+        if config['ion_imgs']['contr_enh']:
+            shell('python ' + VIS_SCRIPT_PATH + '/save_ion_imgs.py {input.imzML_file:q} ' + BIN_IMG_DIR + '/imzML/summarized_{config[summarize_spectra][method]}/analysis/{config[statistical_analysis][fc_thr]}_fc_{config[statistical_analysis][sample_perc_thr]}_samples_ion_imgs -mz_file {input.regulated_up:q} -format \'tif\' -contrast_stretch True -lower {config[ion_imgs][lower]} -upper {config[ion_imgs][upper]}')
+        else:
+            shell('python ' + VIS_SCRIPT_PATH + '/save_ion_imgs.py {input.imzML_file:q} ' + BIN_IMG_DIR + '/imzML/summarized_{config[summarize_spectra][method]}/analysis/{config[statistical_analysis][fc_thr]}_fc_{config[statistical_analysis][sample_perc_thr]}_samples_ion_imgs -mz_file {input.regulated_up:q} -format \'tif\'')
 
+rule save_ion_imgs_downreg:
+    input: regulated_down=BIN_IMG_DIR + '/imzML/summarized_' + str(config['summarize_spectra']['method']) + '/analysis/-' + str(config['statistical_analysis']['fc_thr']) + '_fc_' + str(config['statistical_analysis']['sample_perc_thr']) + '_samples_filtered.csv',
+            imzML_file=IMZML_DIR + '/{grp}_{smpl}.imzML'
+    output: directory(BIN_IMG_DIR + '/imzML/summarized_' + str(config['summarize_spectra']['method']) + '/analysis/-' + str(config['statistical_analysis']['fc_thr']) + '_fc_' + str(config['statistical_analysis']['sample_perc_thr']) + '_samples_ion_imgs/{grp}_{smpl}')
+    run:
+        if config['ion_imgs']['contr_enh']:
+            shell('python ' + VIS_SCRIPT_PATH + '/save_ion_imgs.py {input.imzML_file:q} ' + BIN_IMG_DIR + '/imzML/summarized_{config[summarize_spectra][method]}/analysis/-{config[statistical_analysis][fc_thr]}_fc_{config[statistical_analysis][sample_perc_thr]}_samples_ion_imgs -mz_file {input.regulated_down:q} -format \'tif\' -contrast_stretch True -lower {config[ion_imgs][lower]} -upper {config[ion_imgs][upper]}')
+        else:
+            shell('python ' + VIS_SCRIPT_PATH + '/save_ion_imgs.py {input.imzML_file:q} ' + BIN_IMG_DIR + '/imzML/summarized_{config[summarize_spectra][method]}/analysis/-{config[statistical_analysis][fc_thr]}_fc_{config[statistical_analysis][sample_perc_thr]}_samples_ion_imgs -mz_file {input.regulated_down:q} -format \'tif\'')
 

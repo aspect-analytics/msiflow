@@ -7,5 +7,10 @@ summarize_spectra:
 statistical_analysis:
   fc_thr: 0.5
   sample_perc_thr: 0.5
-  save_ion_imgs: True
+
+ion_imgs:
+  save: True
+  contr_enh: True
+  lower: 0.0
+  upper: 99.9
 
