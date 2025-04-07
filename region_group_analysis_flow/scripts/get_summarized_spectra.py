@@ -74,7 +74,7 @@ def get_summarized_spectra(result_dir, imzML_dir='', sum_file='', method='mean',
         df_sum_all = pd.DataFrame(index=mzs)
 
         print('extracting summarized spectra ...')
-        for file in tqdm(imzML_files):
+        for file in imzML_files:
             # create pandas.DataFrame from imzML
             df = utils.get_dataframe_from_imzML(os.path.join(imzML_dir, file), multi_index=True)
             if method == 'mean':

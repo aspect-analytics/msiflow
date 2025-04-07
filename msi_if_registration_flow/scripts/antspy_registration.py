@@ -6,6 +6,10 @@ import ants
 import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
+# import sys
+
+# sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
+# from pkg import utils
 
 # get_ipython().run_line_magic('matplotlib', 'inline')
 plt.rcParams["figure.figsize"] = (10, 8)
@@ -65,6 +69,9 @@ def registration(fixed_img, moving_img, af_chan, out_dir, plot=False):
     fixed_img = tifffile.imread(fixed_img)
     moving_img_stack = tifffile.imread(moving_img)
     moving_img = moving_img_stack[af_chan]
+
+    # fixed_img = utils.NormalizeData(fixed_img) * 255
+    # moving_img = utils.NormalizeData(moving_img) * 255
 
     if moving_img.shape != fixed_img.shape:
         raise ValueError('fixed image and moving image do not have the same shape')

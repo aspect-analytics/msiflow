@@ -186,7 +186,7 @@ def construct_spot_image(imzML_file, vals, output_file='', cmap='Spectral'):
 
 
 def plot_ion_image(mz, input_file, output_file='', tol=0.1, unit='da', CLAHE=True, contrast_stretch=False, lower=0,
-                   upper=99, plot=False, cmap='viridis', pyimzml=True, remove_isolated_px=False, output_dir=''):
+                   upper=99, plot=False, cmap='viridis', pyimzml=True, remove_isolated_px=False, output_dir='', return_img=False):
     """
     Plots and saves an ion image from an imzML file.
 
@@ -279,6 +279,9 @@ def plot_ion_image(mz, input_file, output_file='', tol=0.1, unit='da', CLAHE=Tru
                 plt.savefig(output_file, dpi=300)
         plt.show()
     plt.close()
+
+    if return_img:
+        return ion_img
 
 
 def plot_spectrum(mzs, intensities, plot=False, output_file=''):
