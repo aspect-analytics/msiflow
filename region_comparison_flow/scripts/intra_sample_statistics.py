@@ -49,14 +49,53 @@ def plot_sample_percentage(percentage_per_row, fc_thr, sample_perc_thr, region_1
     plt.close()
 
 
+def mean_fc_bar_plot(df, n, output_file, annot_fl='', plot=False):
+    y_col='index'
+
+    if annot_fl != '':
+        annot_df = pd.read_csv(annot_fl, delimiter=';', index_col=0)
+        annot_df.index = annot_df.index.round(4)
+        df.index = df.index.round(4)
+
+        df = annot_df.merge(df, how='inner', left_index=True, right_index=True)
+        print(df)
+
+        y_col = 'lipid'
+
+    top_rows = df.nlargest(n, 'row_mean_above_thresh').reset_index()
+
+    if annot_fl == '':
+        top_rows['index'] = top_rows['index'].astype(str)
+    else:
+        top_rows.drop(columns=['index'], inplace=True)
+
+    top_rows = top_rows.sort_values('row_mean_above_thresh', ascending=False)
+    # print("top_rows=", top_rows)
+
+    # seaborn bar plot
+    plt.figure(figsize=(7, 10))
+    sns.barplot(y=y_col, x='row_mean_above_thresh', data=top_rows)
+    plt.ylabel('m/z')
+    plt.xlabel('mean log2(FC)')
+    plt.subplots_adjust(left=0.25)  # Increase left margin
+    plt.savefig(output_file)
+
+    if plot:
+        plt.show()
+        plt.close()
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Calculates fold changes between two regions per individual MSI sample')
     parser.add_argument('input_file', type=str, help='input file with summarized intensities per region')
     parser.add_argument('output_dir', type=str, help='output directory')
     parser.add_argument('-plot', type=bool, default=False, help='set to True to plot volcano')
-    parser.add_argument('-fc_thr', type=float, default=0.5, help='absolute log2 FC threshold to summarize over all samples')
+    parser.add_argument('-fc_thr', type=float, default=0.5,
+                        help='absolute log2 FC threshold to summarize over all samples')
     parser.add_argument('-sample_perc_thr', type=float, default=0.5,
                         help='sample percentage in which the FC threshold needs to be met')
+    parser.add_argument('-annotations_file', type=str, default='',
+                        help='optional file containing annotated m/z values')
     args = parser.parse_args()
 
     if not os.path.exists(args.output_dir):
@@ -147,5 +186,26 @@ if __name__ == '__main__':
     filtered_high_df.to_csv(os.path.join(args.output_dir, '{}_fc_{}_samples_filtered.csv'.format(args.fc_thr, args.sample_perc_thr)))
     filtered_low_df.to_csv(os.path.join(args.output_dir, '-{}_fc_{}_samples_filtered.csv'.format(args.fc_thr, args.sample_perc_thr)))
 
+    # calculate mean fc of samples with fc above threshold
+    filtered_high_df['row_mean_above_thresh'] = filtered_high_df.where(filtered_high_df > args.fc_thr).mean(axis=1)
+    filtered_low_df['row_mean_above_thresh'] = filtered_low_df.where(filtered_low_df < -args.fc_thr).mean(axis=1)
+
+    print("filtered_high_df=", filtered_high_df)
+    print("filtered_low_df=", filtered_low_df)
+
+    # generate mean fc bar plot of top N
+    top_n = 20
+    mean_fc_bar_plot(df=filtered_high_df,
+                     n=top_n,
+                     output_file=os.path.join(args.output_dir, '{}_fc_{}_samples_top_mean_FC.svg'.format(args.fc_thr,
+                                                                                                         args.sample_perc_thr)),
+                     annot_fl=args.annotations_file,
+                     plot=args.plot)
+    mean_fc_bar_plot(df=filtered_low_df,
+                     n=top_n,
+                     output_file=os.path.join(args.output_dir, '-{}_fc_{}_samples_top_mean_FC.svg'.format(args.fc_thr,
+                                                                                                          args.sample_perc_thr)),
+                     annot_fl=args.annotations_file,
+                     plot=args.plot)
 
 

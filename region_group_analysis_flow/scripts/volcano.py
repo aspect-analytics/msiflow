@@ -225,7 +225,8 @@ def volcano_plot(input, output_dir, gr1, gr2, plot=True, transpose=False, fc_thr
     plt.close()
 
     # only keep rows where all values are finite
-    df_data = df_data[np.isfinite(df_data).all(axis=1)]
+    num_cols = df_data.select_dtypes(include=[np.number]).columns
+    df_data = df_data[np.isfinite(df_data[num_cols]).all(axis=1)]
 
     # save significant data file with p-value and fold change
     df_sig_up = df_data.loc[(df_data['p-value'] > 1.3) & (df_data['Fold change'] > fc_thr)]
