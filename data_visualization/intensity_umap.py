@@ -28,6 +28,7 @@ if __name__ == '__main__':
     parser.add_argument('-neg_group', type=str, default='UPEC', help='name of infected group')
     parser.add_argument('-show_neg_group_only', type=bool, default=False, help='set to true to only plot negative group')
     parser.add_argument('-plot', type=bool, default=False, help='set to true if output should be plotted')
+    parser.add_argument('-format', type=str, default='png', help='file format of plots')
     args = parser.parse_args()
 
     if not os.path.exists(args.output_dir):
@@ -78,9 +79,27 @@ if __name__ == '__main__':
         else:
             df = df_upec
 
+    if args.contrast_stretch:
+        df_scaled = pd.DataFrame(columns=['UMAP_1', 'UMAP_2', args.mz])
+        for smpl in np.unique(df['sample'].to_numpy()):
+            df_smpl = df[df['sample'] == smpl]
+            # print(df_smpl)
+            low, up = np.percentile(df_smpl[args.mz].to_numpy(), (0, 99.9))
+            rescaled = rescale_intensity(df_smpl[args.mz].to_numpy(), in_range=(low, up))
+            df_smpl_rescaled = pd.DataFrame.from_dict(
+                {'UMAP_1': df_smpl['UMAP_1'].to_numpy(), 'UMAP_2': df_smpl['UMAP_2'],
+                 args.mz: rescaled})
+            # print(df_smpl_rescaled)
+            df_scaled = df_scaled._append(df_smpl_rescaled)
+            # print(df_scaled)
+        # low, up = np.percentile(df[args.mz].to_numpy(), (0, 99.9))
+        # df[args.mz] = rescale_intensity(df[args.mz].to_numpy(), in_range=(low, up))
+        # df = df_scaled.append(df_control)
+        df = df_scaled
+
     if args.mz:
         args.mz = np.round(args.mz, 4)
-        output_file = os.path.join(args.output_dir, str(args.mz) + '_umap.png')
+        output_file = os.path.join(args.output_dir, str(args.mz) + '_umap.' + args.format)
         plot_mz_umap(df, args.mz, output_file, df_control, args.show_neg_group_only, args.cmap, args.dot_size,
                      args.plot)
     else:
@@ -90,7 +109,7 @@ if __name__ == '__main__':
         mz_arr = df_mz_file[df_mz_file.columns[0]].to_numpy().astype(float)
         mz_arr = np.round(mz_arr, 4)
         for mz in mz_arr:
-            output_file = os.path.join(args.output_dir, str(mz) + '_umap.png')
+            output_file = os.path.join(args.output_dir, str(mz) + '_umap.' + args.format)
             plot_mz_umap(df, mz, output_file, df_control, args.show_neg_group_only, args.cmap, args.dot_size,
                          args.plot)
 

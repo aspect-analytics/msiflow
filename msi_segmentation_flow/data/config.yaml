@@ -8,6 +8,7 @@ general:
 dim_reduction:
   method: 'umap'
   n_components: 2
+  model: ''
 
 umap:
   metric: 'cosine'

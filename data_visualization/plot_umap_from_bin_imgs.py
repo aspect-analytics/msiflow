@@ -19,14 +19,24 @@ from pkg import utils
 warnings.filterwarnings('ignore', module='pyimzml')
 
 
+def parse_tuple(s):
+    try:
+        return tuple(s.strip("()").split(','))
+    except:
+        raise argparse.ArgumentTypeError("Tuples must be in the form (a,b)")
+
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Plots UMAP color-coded according to binary images')
     parser.add_argument('imzML_dir', type=str, help='directory with with imzML files')
     parser.add_argument('bin_dir', type=str, help='directory with with binary images labeled class_group_sample')
     parser.add_argument('umap_file', type=str, help='file with UMAP embedding')
     parser.add_argument('out_dir', type=str, help='output directory')
+    parser.add_argument('-pairs', type=parse_tuple, nargs='+', help='List of (x,y) pairs')
     parser.add_argument('-cmap', type=str, default='Spectral', help='cmap to use for all plots')
     parser.add_argument('-dot_size', type=float, default=1, help='size for dots in scatterplots')
+    parser.add_argument('-fig_file_format', type=str, default='png', help='define file format of generated Figures')
     parser.add_argument('-plot', type=bool, default=False, help='set to true if output should be plotted')
     args = parser.parse_args()
 
@@ -96,11 +106,13 @@ if __name__ == '__main__':
 
 
 
-    color_labels = [('UPEC', 'msc'), ('control', 'msc'), ('UPEC', 'lp'), ('control', 'lp'),
-                     ('UPEC', 'uro'), ('control', 'uro')]
+    #color_labels = [('UPEC', 'msc'), ('control', 'msc'), ('UPEC', 'lp'), ('control', 'lp'),
+    #                 ('UPEC', 'uro'), ('control', 'uro')]
     # color_labels = [('control', 'msc'), ('UPEC', 'msc'), ('control', 'lp'), ('UPEC', 'lp'),
     #                 ('control', 'uro'), ('UPEC', 'uro')]
     # color_labels = [('UPEC', 'msc'), ('UPEC', 'lp'), ('UPEC', 'uro')]
+    # color_labels = [('UPEC', 'neutros'), ('ULSKL', 'neutros')]
+    color_labels = args.pairs
     pal = sns.color_palette('Paired').as_hex()
     #id = [1, 3, 7]
     #color_values = [pal[i] for i in id]
@@ -152,17 +164,17 @@ if __name__ == '__main__':
     #         tifffile.imsave(os.path.join(args.out_dir, 'cluster_' + str(lbl) + '_' + name + '.tif'), bin_lbl_im.astype('uint8'))
     #
     #
-    # # save combined umap
-    # ax = sns.scatterplot(x='UMAP_1', y='UMAP_2', data=df_result, legend='full', linewidth=0,
-    #                 hue=df_result[['group', 'label']].apply(tuple, axis=1), s=args.dot_size, palette=color_dict,
-    #                 hue_order=color_labels)
-    # ax.get_legend().remove()
-    # plt.xlim([0, 1])
-    # plt.ylim([0, 1])
-    # plt.axis('off')
-    # plt.savefig(os.path.join(args.out_dir, 'combined_umap.png'), dpi=300, transparent=True)
-    # #plt.show()
-    # plt.close()
+    # save combined umap
+    ax = sns.scatterplot(x='UMAP_1', y='UMAP_2', data=df_result, legend='full', linewidth=0,
+                    hue=df_result[['group', 'label']].apply(tuple, axis=1), s=args.dot_size, palette=color_dict,
+                    hue_order=color_labels)
+    ax.get_legend().remove()
+    plt.xlim([0, 1])
+    plt.ylim([0, 1])
+    plt.axis('off')
+    plt.savefig(os.path.join(args.out_dir, 'combined_umap.{}'.format(args.fig_file_format)), dpi=300, transparent=True)
+    #plt.show()
+    plt.close()
     #
     # # save umap of individual label
     # for lbl in df_result['label'].unique():
@@ -178,14 +190,14 @@ if __name__ == '__main__':
 
     # combined umap colored by group
     grp_colors = ['darkgrey', 'darkred']
-    grp_color_dict = {'control': grp_colors[0], 'UPEC': grp_colors[1]}
+    grp_color_dict = {'UPEC': grp_colors[0], 'ULSKL': grp_colors[1]}
     ax = sns.scatterplot(x='UMAP_1', y='UMAP_2', data=df_result, legend='full', linewidth=0,
                     hue='group', s=args.dot_size, palette=grp_color_dict)
     ax.get_legend().remove()
     plt.xlim([0, 1])
     plt.ylim([0, 1])
     plt.axis('off')
-    plt.savefig(os.path.join(args.out_dir, 'combined_umap_colored_by_group.png'), dpi=300, transparent=True)
+    plt.savefig(os.path.join(args.out_dir, 'combined_umap_colored_by_group.{}'.format(args.fig_file_format)), dpi=300, transparent=True)
     # plt.show()
     plt.close()
 
@@ -199,7 +211,7 @@ if __name__ == '__main__':
         plt.xlim([0, 1])
         plt.ylim([0, 1])
         plt.axis('off')
-        plt.savefig(os.path.join(args.out_dir, grp + '_umap.png'), dpi=300, transparent=True)
+        plt.savefig(os.path.join(args.out_dir, grp + '_umap.{}'.format(args.fig_file_format)), dpi=300, transparent=True)
         plt.close()
 
         ax = sns.scatterplot(x='UMAP_1', y='UMAP_2', data=df_grp, legend='full', linewidth=0, s=args.dot_size,
@@ -207,7 +219,7 @@ if __name__ == '__main__':
         plt.xlim([0, 1])
         plt.ylim([0, 1])
         plt.axis('off')
-        plt.savefig(os.path.join(args.out_dir, grp + '_single_color_umap.png'), dpi=300, transparent=True)
+        plt.savefig(os.path.join(args.out_dir, grp + '_single_color_umap.{}'.format(args.fig_file_format)), dpi=300, transparent=True)
         plt.close()
 
     df_result.to_csv(os.path.join(args.out_dir, 'umap_data.csv'))

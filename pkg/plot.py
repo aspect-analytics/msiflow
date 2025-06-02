@@ -5,6 +5,8 @@ import warnings
 from pyimzml.ImzMLParser import ImzMLParser, getionimage
 from skimage.exposure import equalize_adapthist, rescale_intensity, equalize_hist
 import matplotlib.pyplot as plt
+from matplotlib.cm import ScalarMappable
+from matplotlib.colors import Normalize
 from mpl_toolkits.mplot3d import Axes3D
 import tifffile
 from skimage.morphology import remove_small_objects
@@ -24,39 +26,80 @@ warnings.filterwarnings("ignore", category=UserWarning)
 pd.options.mode.chained_assignment = None
 
 
-def plot_mz_umap(df, mz, out_file, df_control=None, show_neg_group_only=False, cmap='inferno', dot_size=1, plot=False):
-    df[mz] = utils.NormalizeData(df[mz].to_numpy())
+def plot_mz_umap(df, mz, out_file, df_control=None, show_neg_group_only=False,
+                 cmap='inferno', dot_size=1, plot=False):
+    # Preserve original m/z values
+    mz_values = df[mz].to_numpy()
 
-    colors = []
+    # Normalize for colormap only
+    norm = Normalize(vmin=mz_values.min(), vmax=mz_values.max())
     cmap = plt.cm.get_cmap(cmap)
-    # cmap = mpc.LinearSegmentedColormap.from_list("", ["#000000", "#1EA0FF"])
-    # cmap = mpc.LinearSegmentedColormap.from_list("", [(0, 0, 0, 0), (1, 0, 0, 0)])
-    for intensity in df[mz]:
-        rgba = tuple(cmap(intensity))
-        if intensity <= 0.99:
-            rgba_list = list(rgba)
-            rgba_list[3] = 1
-            rgba = tuple(rgba_list)
-        colors.append(rgba)
-    df['color'] = colors
 
-    if show_neg_group_only:
-        fig = sns.scatterplot(x='UMAP_1', y='UMAP_2', data=df_control, color='gainsboro', s=dot_size, linewidth=0)
+    # Assign colors based on original (not normalized) m/z
+    df['color'] = [cmap(norm(val)) for val in mz_values]
 
+    fig, ax = plt.subplots()
+
+    # Optional control group
+    if show_neg_group_only and df_control is not None:
+        sns.scatterplot(x='UMAP_1', y='UMAP_2', data=df_control,
+                        color='gainsboro', s=dot_size, linewidth=0, ax=ax)
+
+    # Main data plotted by quantile slicing (still use original m/z values)
     for i in tqdm(np.arange(0, 1, 0.01)):
-        perc = df[mz].quantile(i)
-        df_perc = df[df[mz] > perc]
-        sns.scatterplot(x=df_perc['UMAP_1'], y=df_perc['UMAP_2'], c=df_perc['color'].to_numpy(),
-                        s=dot_size, linewidth=0)
+        perc = np.quantile(mz_values, i)
+        df_perc = df[mz_values > perc]
+        ax.scatter(x=df_perc['UMAP_1'], y=df_perc['UMAP_2'],
+                   c=df_perc['color'].to_numpy(), s=dot_size, linewidth=0)
 
-    plt.axis('off')
-    plt.xlim([0, 1])
-    plt.ylim([0, 1])
-    # print('saving figure')
+    ax.axis('off')
+    ax.set_xlim([0, 1])
+    ax.set_ylim([0, 1])
+
+    # Add colorbar for original m/z values
+    sm = ScalarMappable(cmap=cmap, norm=norm)
+    sm.set_array(mz_values)
+    cbar = fig.colorbar(sm, ax=ax, fraction=0.03, pad=0.04)
+    cbar.set_label(f'{mz} intensity', rotation=270, labelpad=15)
+
+    # Save or show plot
     plt.savefig(out_file, dpi=300, transparent=True)
-
     if plot:
         plt.show()
+    plt.close()
+# def plot_mz_umap(df, mz, out_file, df_control=None, show_neg_group_only=False, cmap='inferno', dot_size=1, plot=False):
+#     df[mz] = utils.NormalizeData(df[mz].to_numpy())
+#
+#     colors = []
+#     cmap = plt.cm.get_cmap(cmap)
+#     # cmap = mpc.LinearSegmentedColormap.from_list("", ["#000000", "#1EA0FF"])
+#     # cmap = mpc.LinearSegmentedColormap.from_list("", [(0, 0, 0, 0), (1, 0, 0, 0)])
+#     for intensity in df[mz]:
+#         rgba = tuple(cmap(intensity))
+#         if intensity <= 0.99:
+#             rgba_list = list(rgba)
+#             rgba_list[3] = 1
+#             rgba = tuple(rgba_list)
+#         colors.append(rgba)
+#     df['color'] = colors
+#
+#     if show_neg_group_only:
+#         fig = sns.scatterplot(x='UMAP_1', y='UMAP_2', data=df_control, color='gainsboro', s=dot_size, linewidth=0)
+#
+#     for i in tqdm(np.arange(0, 1, 0.005)):
+#         perc = df[mz].quantile(i)
+#         df_perc = df[df[mz] > perc]
+#         sns.scatterplot(x=df_perc['UMAP_1'], y=df_perc['UMAP_2'], c=df_perc['color'].to_numpy(),
+#                         s=dot_size, linewidth=0)
+#
+#     plt.axis('off')
+#     plt.xlim([0, 1])
+#     plt.ylim([0, 1])
+#     # print('saving figure')
+#     plt.savefig(out_file, dpi=300, transparent=True)
+#
+#     if plot:
+#         plt.show()
 
 
 @numba.njit()

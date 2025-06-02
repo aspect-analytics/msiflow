@@ -25,18 +25,18 @@ def plot_embedding(df, col, output_dir, method, pca=None, plot=False):
     else:
         plt.xlabel('UMAP 1')
         plt.ylabel('UMAP 2')
-    plt.savefig(os.path.join(output_dir, '2D_{}_colored_by_{}.png'.format(method, col)))
+    plt.savefig(os.path.join(output_dir, '2D_{}_colored_by_{}.svg'.format(method, col)))
     if plot:
         plt.show()
     plt.close()
 
 
 def stat_analysis(data_file, gr1, gr2, output_dir, plot=False):
-    df_data = pd.read_csv(data_file, skipinitialspace=True, delimiter=',',index_col=0)
+    df_data = pd.read_csv(data_file, skipinitialspace=True, delimiter=';',index_col=0)
     print(df_data)
 
     df_data = df_data.dropna(subset=['Fold change'])
-    df_data = df_data[df_data['Fold change'].abs() > 0.25]
+    df_data = df_data[df_data['Fold change'].abs() > 0.8]
 
 
     gr1_cols = [x for x in df_data.columns if gr1 in x]

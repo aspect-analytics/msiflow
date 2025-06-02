@@ -275,6 +275,7 @@ def umap_groups(imzml_dir, result_dir, clustering='HDBSCAN', min_clusters=50, mi
         plt.ylim([0, 1])
         plt.title('{} data colored by sample no.'.format(group))
         plt.savefig(os.path.join(result_dir, group + '_2D_' + method + '_colored_by_sample.png'), dpi=300)
+        plt.savefig(os.path.join(result_dir, group + '_2D_' + method + '_colored_by_sample.svg'))
         plt.close()
 
         sns.scatterplot(x=col_1, y=col_2, color=group_colors[i], data=df_group, legend='full', linewidth=0, s=dot_size)
@@ -282,6 +283,7 @@ def umap_groups(imzml_dir, result_dir, clustering='HDBSCAN', min_clusters=50, mi
         plt.ylim([0, 1])
         plt.title('{} data colored by sample no.'.format(group))
         plt.savefig(os.path.join(result_dir, group + '_2D_' + method + '_colored_by_group.png'), dpi=300)
+        plt.savefig(os.path.join(result_dir, group + '_2D_' + method + '_colored_by_group.svg'))
         plt.close()
 
 
@@ -302,6 +304,7 @@ def umap_groups(imzml_dir, result_dir, clustering='HDBSCAN', min_clusters=50, mi
         plt.axis('off')
         plt.title('Sample {}'.format(sample))
         plt.savefig(os.path.join(result_dir, method + '_sample_{}.png'.format(sample)), dpi=300)
+        plt.savefig(os.path.join(result_dir, method + '_sample_{}.svg'.format(sample)))
         plt.close()
 
     # create hyperspectral visualization according to clusters
@@ -316,6 +319,7 @@ def umap_groups(imzml_dir, result_dir, clustering='HDBSCAN', min_clusters=50, mi
     sns.scatterplot(x=col_1, y=col_2, hue='sample', data=df_result, legend='full', linewidth=0, s=dot_size)
     plt.title('All data colored by sample no.')
     plt.savefig(os.path.join(result_dir, 'combined_2D_'+method+'_colored_by_sample.png'), dpi=300)
+    plt.savefig(os.path.join(result_dir, 'combined_2D_' + method + '_colored_by_sample.svg'))
     plt.close()
     sns.scatterplot(x=col_1, y=col_2, hue='group', data=df_result, legend='full', linewidth=0, palette=['darkorange', 'steelblue'], s=dot_size)
     plt.title('All data colored by group')
@@ -374,6 +378,7 @@ def umap_groups(imzml_dir, result_dir, clustering='HDBSCAN', min_clusters=50, mi
         plt.ylim([0, 1])
         plt.title('{} data colored by sample no.'.format(group))
         plt.savefig(os.path.join(result_dir, group + '_2D_' + method + '_clusters.png'), dpi=300)
+        plt.savefig(os.path.join(result_dir, group + '_2D_' + method + '_clusters.svg'))
         plt.close()
 
 

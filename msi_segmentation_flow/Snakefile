@@ -61,7 +61,7 @@ rule single_sample_segmentation:
         mem_mb=lambda wildcards: file_size_resources(wildcards,input_file="{}/{}.ibd".format(MSI_DIR, wildcards.fl))["mem_mb"]
     # benchmark: repeat(BENCHMARK_PATH + "/{fl}.single_sample_segmentation.benchmark.txt",BM_REPEAT)
     shell: 'python ' + MSI_SEG_SCRIPT_PATH + '/single_sample_segmentation.py {input:q} -result_dir ' + MSI_DIR + '/segmented '
-            + '-method {config[dim_reduction][method]} -n_components {config[dim_reduction][n_components]} '
+            + '-method \'{config[dim_reduction][method]}\' -n_components {config[dim_reduction][n_components]} '
               '-metric {config[umap][metric]} -n_neighbors {config[umap][n_neighbors]} -min_dist {config[umap][min_dist]} '
               '-cluster {config[clustering][method]} -n_clusters {config[clustering][n_clusters]} '
               '-min_cluster_size {config[hdbscan][min_cluster_size]} -min_samples {config[hdbscan][min_samples]} '
@@ -72,8 +72,9 @@ rule multi_sample_segmentation:
     output: expand(MSI_DIR + '/segmented/{fl}.png', fl=MSI_FILES)
     # benchmark: repeat(BENCHMARK_PATH + "/multi_sample_segmentation.benchmark.txt",BM_REPEAT)
     shell: 'python ' + MSI_SEG_SCRIPT_PATH + '/multi_sample_segmentation.py ' + MSI_DIR + ' -result_dir '
-            + MSI_DIR + '/segmented -method {config[dim_reduction][method]} -dist_metric {config[umap][metric]} '
+            + MSI_DIR + '/segmented -method \'{config[dim_reduction][method]}\' -dist_metric {config[umap][metric]} '
                         '-n_neighbors {config[umap][n_neighbors]} -min_dist {config[umap][min_dist]} '
                         '-clustering_method {config[clustering][method]} -min_cluster_size {config[hdbscan][min_cluster_size]} '
                         '-min_samples {config[hdbscan][min_samples]} -n_clusters {config[clustering][n_clusters]} '
-                        '-dot_size {config[general][dot_size]} -batch_correct {config[general][batch_correct]}'
+                        '-dot_size {config[general][dot_size]} -batch_correct {config[general][batch_correct]} '
+                        '-embedding_model \'{config[dim_reduction][model]}\''
