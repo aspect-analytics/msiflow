@@ -62,6 +62,8 @@ To use the local version of msiFlow, follow these instructions:
    1. if you have Anaconda installed, create an environment of msiFlow by running `conda env create --file msiflow_env.yaml`. This creates an environemnt with all required packages at once.
    2. if you want to use pure Python, download all packages by running `pip install -r requirements.txt`
 
+**Note:** The [latest release](https://github.com/Immunodynamics-Engel-Lab/msiflow/releases/tag/v1.0.1) provides a stable version for local execution on Ubuntu.  
+
 ## 🖥️ System requirements
 ### Hardware 
 The hardware requirements depend on the data size. The [example data](https://doi.org/10.5281/zenodo.11913042) for most workflows (except MSI pre-processing and segmentation) can be processed on a computer with 8 GB RAM. The example data for MSI pre-processing and segmentation requires at least 120 GB RAM.
@@ -79,6 +81,9 @@ To run the Docker version of msiFlow, follow these instructions:
 
 **Important note:** don't change the field *input path* when using the gui or the *data* parameter in the configuration file when using the cli! This parameter is only intended for the local version of msiFlow.
 In the Docker version the data path is specified in the corresponding command by `<path-to-data>` or `<path-to-data-and-config>`. 
+
+**Note for Windows users:** to use Docker properly on Windows, install [Docker Desktop with WSL2 integration](https://docs.docker.com/desktop/setup/install/windows-install/). Once configured, run msiFlow via Docker from WSL (Ubuntu). When mounting data, convert Windows paths (e.g. `D:\dir\data`) to WSL format (e.g. `/mnt/d/dir/data`) and avoid whitespaces in file paths.
+
 ### Local Version
 
 To run msiFlow locally, follow these instructions:
